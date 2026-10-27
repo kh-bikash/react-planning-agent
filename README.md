@@ -26,6 +26,8 @@ pytest -q
 
 For live model calls, set `OPENAI_API_KEY` and optionally `OPENAI_MODEL` and `OPENAI_BASE_URL` as shown in `.env.example`. The test suite uses stubs and needs no model key.
 
+The installed `react-planner` command answers tasks using only three built-in tools: bounded arithmetic, read-only files under `--root`, and bounded text search under that root. Run `react-planner --root ./docs run "Find the refund terms and summarize them"`. For the local browser, run `react-planner --root ./docs serve --port 8080` and open `http://127.0.0.1:8080`. Set `OPENAI_API_KEY` for either mode. The agent exposes its step trace and stop reason in the result.
+
 ```python
 from react_planning_agent.engine import ReActAgent
 from react_planning_agent.llm import OpenAICompatibleLLM
@@ -38,6 +40,8 @@ print(agent.run("Look up a and answer"))
 
 ```mermaid
 flowchart LR
+    CLI[Command line] --> Task
+    Browser[Browser interface] --> Task
     Task[Task] --> Planner[JSON decision planner]
     Planner -->|Permitted action| Tool[Allowlisted tool]
     Tool --> Observation[Bounded observation]
@@ -59,6 +63,8 @@ Task -> JSON action decision -> permitted tool -> bounded observation -> reflect
 See [ARCHITECTURE.md](ARCHITECTURE.md) for components, state, failure behavior, and operations.
 
 ## Deployment and safety
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for the non-root container, token-protected browser, data mounts, and release checks.
 
 Tool handlers are trusted application code. Register read only handlers by default, enforce authorization inside handlers, and set network and execution timeouts. Tool exceptions are reduced to class names in observations.
 
