@@ -2,6 +2,8 @@
 
 Run a bounded observe, reason, act loop over an explicit tool allowlist with repeat detection and graceful tool failure.
 
+Pass a `critic(task, proposed_answer, steps)` callback to reject an unsupported final answer and return targeted feedback. Revisions count against `max_steps`.
+
 ## Quick start
 
 Requires Python 3.11 or newer. From this repository:

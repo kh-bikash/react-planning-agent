@@ -21,11 +21,14 @@ class PlanResult:
 
 
 class ReActAgent:
-    def __init__(self, llm: LLM, tools: dict[str, Callable[[str], str]], *, max_steps: int = 5, max_observation_chars: int = 2000):
+    def __init__(self, llm: LLM, tools: dict[str, Callable[[str], str]], *, max_steps: int = 5,
+                 max_observation_chars: int = 2000,
+                 critic: Callable[[str, str, tuple[Step, ...]], tuple[bool, str]] | None = None):
         if max_steps < 1:
             raise ValueError("max_steps must be positive")
         self.llm, self.tools = llm, dict(tools)
         self.max_steps, self.max_observation_chars = max_steps, max_observation_chars
+        self.critic = critic
 
     def run(self, task: str) -> PlanResult:
         messages = [
@@ -39,7 +42,15 @@ class ReActAgent:
             try:
                 decision = json.loads(raw)
                 if "final" in decision:
-                    return PlanResult(str(decision["final"]), tuple(steps), "completed")
+                    proposed = str(decision["final"])
+                    if self.critic:
+                        accepted, feedback = self.critic(task, proposed, tuple(steps))
+                        if not accepted:
+                            messages.extend([{"role": "assistant", "content": raw[:4000]},
+                                             {"role": "user", "content": "Self-critique rejected the proposed answer: " + feedback[:1000] + ". Continue with a new action or revised final answer."}])
+                            steps.append(Step("self_critique", feedback[:self.max_observation_chars]))
+                            continue
+                    return PlanResult(proposed, tuple(steps), "completed")
                 action, argument = str(decision["action"]), str(decision["input"])
             except (ValueError, KeyError, TypeError):
                 observation = "Invalid JSON action; provide a valid action or final answer."
