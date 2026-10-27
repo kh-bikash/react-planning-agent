@@ -36,6 +36,24 @@ print(agent.run("Look up a and answer"))
 
 ## Architecture
 
+```mermaid
+flowchart LR
+    Task[Task] --> Planner[JSON decision planner]
+    Planner -->|Permitted action| Tool[Allowlisted tool]
+    Tool --> Observation[Bounded observation]
+    Observation --> Planner
+    Planner -->|Final answer| Critic[Optional self critique]
+    Critic -->|Rejected| Planner
+    Critic -->|Accepted| Result[Final result]
+    Planner -->|Repeat or step limit| Stop[Safe stop]
+```
+
+| Component | Responsibility |
+|---|---|
+| Planner | Chooses one JSON action or final answer per step. |
+| Tool boundary | Runs only registered handlers and truncates observations. |
+| Stop controller | Enforces iteration limits and repeated action detection. |
+
 Task -> JSON action decision -> permitted tool -> bounded observation -> reflection -> final answer or configured stop reason.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for components, state, failure behavior, and operations.
