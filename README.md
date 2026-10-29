@@ -1,8 +1,17 @@
 # React Planning Agent
 
-Run a bounded observe, reason, act loop over an explicit tool allowlist with repeat detection and graceful tool failure.
+## About
 
-Pass a `critic(task, proposed_answer, steps)` callback to reject an unsupported final answer and return targeted feedback. Revisions count against `max_steps`.
+This is a task assistant that can take a few deliberate steps instead of guessing from a single prompt. It can search or read files inside a folder you choose and do bounded arithmetic. After each tool result, it decides whether to continue or answer. You can inspect the steps it took and why it stopped.
+
+### What you can do
+
+- Ask questions about a local set of documents, such as finding a policy and summarizing it.
+- Limit the number of steps so a task cannot run indefinitely.
+- Restrict the assistant to the tools and folder you explicitly provide.
+- Add a critic callback that asks for a revision when a final answer is unsupported.
+
+The CLI and local browser are ready to run on your machine or your own server. They need a configured model key for live answers. The supplied tools are read-only, and custom tools should enforce their own permissions and timeouts. This repository does not have a public hosted URL yet.
 
 ## Quick start
 
