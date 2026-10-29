@@ -83,6 +83,41 @@ Install this as a library in an authenticated application or worker. Supply the 
 
 `pytest -q` runs deterministic tests. GitHub Actions runs the same suite on pushes and pull requests.
 
+## Product guide
+
+### A typical run
+
+Point the app at a folder of documents with `--root`, then ask a question such as “Find the refund terms and summarize them.” The planner may search filenames or text, read a matching file, and then produce an answer. Its result includes the tool steps and a stop reason, so you can see whether it answered, ran out of steps, repeated an action, or encountered a tool problem.
+
+| Built-in tool | What it can do | Boundary |
+|---|---|---|
+| File read | Read a file under the configured root | Read only; path must stay under that root |
+| Text search | Find bounded matches under that root | Result size is limited |
+| Calculator | Evaluate basic arithmetic | Expression length and operators are limited |
+
+The agent cannot install software, write files, run arbitrary commands, or browse the web through these built-in tools. If you integrate another handler, it becomes part of your application's trusted code and must apply its own access checks and I/O timeouts.
+
+### How the loop stops
+
+The model chooses a structured action or a final answer at each step. Tool output is returned as an observation for the next decision. `max_steps` bounds the whole run, and repeated actions are detected so the agent cannot spin forever. A failing tool becomes a bounded observation rather than an unhandled crash. An optional `critic(task, proposed_answer, steps)` callback can reject an answer with feedback; the revision still counts against the step budget.
+
+### Configuration and deployment
+
+Set `OPENAI_API_KEY` for live planning, and optionally `OPENAI_BASE_URL` and `OPENAI_MODEL` for an OpenAI-compatible provider. Pick a narrow document root. Start the CLI with `react-planner --root ./docs run "..."` or the local browser with `react-planner --root ./docs serve --port 8080`. The browser is an operator interface; see [DEPLOYMENT.md](DEPLOYMENT.md) for token protection and container options before exposing it beyond localhost.
+
+No task history is stored by the core agent. If you need an audit record, persist the returned step trace in your integrating application. Unit tests use a stub model to cover valid plans, limits, repeat detection, and tool failures without consuming model tokens. The app has no public Vercel deployment yet.
+
+### Common issues
+
+| Symptom | Check |
+|---|---|
+| A file cannot be read | Make sure it is under `--root`; paths outside that folder are intentionally blocked. |
+| The agent stops before answering | Read its stop reason and step trace. Increase `max_steps` only if the extra work is justified. |
+| It repeats a search | Narrow the task or improve the available documents; repeated actions are stopped on purpose. |
+| Model calls fail | Check the provider key, HTTPS base URL, model ID, and quota. |
+
+For a production integration, add domain-specific answer checks and log the bounded step trace without storing secrets from source files. The included local interface is a starting point for an authenticated deployment, not a shared public service.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
